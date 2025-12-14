@@ -1,0 +1,31 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model License {
+  id           String    @id @default(uuid())
+  key          String    @unique
+  lockedHwid   String?
+  createdAt    DateTime  @default(now())
+  expiresAt    DateTime?
+  lastCheckIn  DateTime?
+  clientName   String?
+  notes        String?
+  status       String    @default("ACTIVE")
+
+  @@index([key])
+}
+
+model AuditLog {
+  id        Int      @id @default(autoincrement())
+  action    String
+  key       String
+  hwid      String
+  ip        String?
+  timestamp DateTime @default(now())
+}
