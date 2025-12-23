@@ -110,7 +110,7 @@ export default function UpdateManager() {
           <label style={{ display: 'block', marginBottom: '5px', fontWeight: 'bold' }}>Update File (.nsis.zip)</label>
           <input 
             type="file" 
-            accept=".zip,.tar.gz" 
+            accept=".zip,.tar.gz,.exe" 
             onChange={(e) => setFile(e.target.files[0])} 
             required
           />
