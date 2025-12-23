@@ -19,7 +19,8 @@ export async function POST(request) {
         }
 
         // 2. Check Expiry
-        if (license.expiresAt && new Date() > new Date(license.expiresAt)) {
+        const now = new Date();
+        if (license.expiresAt && now > new Date(license.expiresAt)) {
             return NextResponse.json({ message: "License Expired" }, { status: 403 });
         }
 
@@ -29,7 +30,24 @@ export async function POST(request) {
             data: { lastCheckIn: new Date() }
         });
 
-        // 4. Issue Fresh Token
+        // 4. Generate Dynamic Token Duration
+        let tokenDuration = 7 * 24 * 60 * 60; // 7 Days default
+
+        if (license.expiresAt) {
+            const expiryDate = new Date(license.expiresAt);
+            const secondsUntilExpiry = Math.floor((expiryDate.getTime() - now.getTime()) / 1000);
+
+            // Cap the token life to the license life
+            if (secondsUntilExpiry < tokenDuration) {
+                tokenDuration = secondsUntilExpiry;
+            }
+        }
+
+        if (tokenDuration <= 0) {
+            return NextResponse.json({ message: "License Expired" }, { status: 403 });
+        }
+
+        // 5. Issue Token
         let amcTimestamp;
         if (license.expiresAt) {
             amcTimestamp = Math.floor(new Date(license.expiresAt).getTime() / 1000);
@@ -40,7 +58,10 @@ export async function POST(request) {
         const token = jwt.sign(
             { sub: license_key, hwid: hwid, amc_exp: amcTimestamp },
             PRIVATE_KEY,
-            { algorithm: 'RS256', expiresIn: '7d' }
+            { 
+                algorithm: 'RS256', 
+                expiresIn: tokenDuration 
+            }
         );
 
         return NextResponse.json({ token });
