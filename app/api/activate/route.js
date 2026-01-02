@@ -9,7 +9,7 @@ export async function POST(request) {
         const body = await request.json();
         const { license_key, hwid } = body;
 
-        // 1. Fetch from Neon DB
+        
         const license = await prisma.license.findUnique({
             where: { key: license_key },
         });
@@ -18,14 +18,20 @@ export async function POST(request) {
             return NextResponse.json({ message: "Invalid License Key" }, { status: 401 });
         }
 
-        if (license.status !== "ACTIVE") {
-            return NextResponse.json({ message: `License is ${license.status}` }, { status: 403 });
+        const now = new Date();
+        const isExpired = license.expiresAt && now > new Date(license.expiresAt);
+        const isNotActive = license.status !== "ACTIVE";
+
+        if (isExpired && !isNotActive) {
+            await prisma.license.update({
+                where: { id: license.id },
+                data: { status: 'EXPIRED' }
+            });
+            return NextResponse.json({ message: "License Expired" }, { status: 403 });
         }
 
-        // 2. Check Expiry
-        const now = new Date();
-        if (license.expiresAt && now > new Date(license.expiresAt)) {
-            return NextResponse.json({ message: "License Expired" }, { status: 403 });
+        if (isNotActive) {
+            return NextResponse.json({ message: `License is ${license.status}` }, { status: 403 });
         }
 
         // 3. Lock Check
@@ -37,7 +43,13 @@ export async function POST(request) {
         if (!license.lockedHwid) {
             await prisma.license.update({
                 where: { id: license.id },
-                data: { lockedHwid: hwid, lastCheckIn: new Date() }
+                data: { lockedHwid: hwid, lastCheckIn: now }
+            });
+        } else {
+            // Update check-in time without locking overhead
+            await prisma.license.update({
+                where: { id: license.id },
+                data: { lastCheckIn: now }
             });
         }
 
@@ -46,7 +58,7 @@ export async function POST(request) {
         let tokenDuration = 7 * 24 * 60 * 60; 
 
         if (license.expiresAt) {
-            // Calculate seconds remaining until official expiry
+            
             const expiryDate = new Date(license.expiresAt);
             const secondsUntilExpiry = Math.floor((expiryDate.getTime() - now.getTime()) / 1000);
 

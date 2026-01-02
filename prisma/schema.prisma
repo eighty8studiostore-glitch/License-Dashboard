@@ -7,18 +7,31 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
+enum PlanType {
+  MONTHLY
+  BIANNUAL
+  YEARLY
+}
+
 model License {
   id           String    @id @default(uuid())
   key          String    @unique
   lockedHwid   String?
+
+  plan         PlanType  @default(MONTHLY)
+
   createdAt    DateTime  @default(now())
+  startsAt     DateTime  @default(now())
   expiresAt    DateTime?
+
   lastCheckIn  DateTime?
   clientName   String?
   notes        String?
+
   status       String    @default("ACTIVE")
 
   @@index([key])
+  @@index([status])
 }
 
 model AuditLog {
@@ -27,5 +40,6 @@ model AuditLog {
   key       String
   hwid      String
   ip        String?
+  metadata  Json?
   timestamp DateTime @default(now())
 }

@@ -47,3 +47,30 @@ export async function uploadUpdate(formData) {
     return { error: err.message };
   }
 }
+
+const USERNAME = 'admin';
+const PASSWORD = 'password123';
+
+export async function login(formData) {
+  const user = formData.get('username');
+  const pass = formData.get('password');
+
+  if (user === USERNAME && pass === PASSWORD) {
+    // Set cookie valid for 24 hours
+    cookies().set('auth_session', 'true', { 
+      httpOnly: true, 
+      secure: process.env.NODE_ENV === 'production',
+      maxAge: 60 * 60 * 24,
+      path: '/'
+    });
+    redirect('/');
+  } else {
+    // In a real app, return error. For simplicity, just redirect back.
+    redirect('/login');
+  }
+}
+
+export async function logout() {
+  cookies().delete('auth_session');
+  redirect('/login');
+}
