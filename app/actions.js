@@ -58,23 +58,24 @@ export async function login(formData) {
   const pass = formData.get('password');
 
   if (user === USERNAME && pass === PASSWORD) {
-    // Set cookie valid for 24 hours
+    // NOTE: In Next.js 15+, cookies() is async and must be awaited
     const cookieStore = await cookies();
-
+    
     cookieStore.set('auth_session', 'true', { 
       httpOnly: true, 
-      secure: true,
+      secure: process.env.NODE_ENV === 'production',
       maxAge: 60 * 60 * 24,
       path: '/'
     });
+    
     redirect('/');
   } else {
-    // In a real app, return error. For simplicity, just redirect back.
     redirect('/login');
   }
 }
 
 export async function logout() {
-  cookies().delete('auth_session');
+  const cookieStore = await cookies();
+  cookieStore.delete('auth_session');
   redirect('/login');
 }
