@@ -58,16 +58,16 @@ export async function login(formData) {
   const pass = formData.get('password');
 
   if (user === USERNAME && pass === PASSWORD) {
-    // NOTE: In Next.js 15+, cookies() is async and must be awaited
+    // 1. Set Cookie
     const cookieStore = await cookies();
-    
     cookieStore.set('auth_session', 'true', { 
       httpOnly: true, 
       secure: process.env.NODE_ENV === 'production',
-      maxAge: 60 * 60 * 24,
+      maxAge: 60 * 60 * 24, // 1 day
       path: '/'
     });
     
+    // 2. Redirect (Must be OUTSIDE any try/catch)
     redirect('/');
   } else {
     redirect('/login');
