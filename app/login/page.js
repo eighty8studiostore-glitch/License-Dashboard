@@ -1,6 +1,6 @@
 'use client';
 
-import { useActionState } from 'react'; // or useFormState depending on Next.js version
+import { useFormState } from 'react-dom';
 import { login } from '@/app/actions';
 
 export default function LoginPage() {

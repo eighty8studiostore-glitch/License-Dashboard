@@ -2,6 +2,8 @@
 
 import fs from 'node:fs';
 import path from 'node:path';
+import { cookies } from 'next/headers';
+import { redirect } from 'next/dist/server/api-utils';
 
 export async function uploadUpdate(formData) {
   const file = formData.get('file');
@@ -57,9 +59,11 @@ export async function login(formData) {
 
   if (user === USERNAME && pass === PASSWORD) {
     // Set cookie valid for 24 hours
-    cookies().set('auth_session', 'true', { 
+    const cookieStore = await cookies();
+
+    cookieStore.set('auth_session', 'true', { 
       httpOnly: true, 
-      secure: process.env.NODE_ENV === 'production',
+      secure: true,
       maxAge: 60 * 60 * 24,
       path: '/'
     });
